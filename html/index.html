@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="favicon.ico">
+  <meta charset="UTF-8">
+  <title>Boardgame Similarity Explorer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/controller.js"></script>
+  <script src="js/main.js"></script>
+</head>
+<body>
+  <h1>Boardgame Similarity Explorer</h1>
+
+  <div class="tabs">
+    <button class="tablink" type="button" data-tab="resultsTab">Results</button>
+    <button class="tablink" type="button" data-tab="graphTab">Graph</button>
+    <button class="tablink" type="button" data-tab="extraTab">Other Charts</button>
+  </div>
+
+  <div id="resultsTab" class="tabcontent">
+    <label for="gameInput">Type a game:</label>
+    <input list="games" id="gameInput" placeholder="e.g. Catan">
+    <datalist id="games"></datalist>
+    <button id="searchBtn" type="button">Search</button>
+
+    <button id="helpFindBtn" type="button">🤔 Help me find a game</button>
+    <div id="helpFindPanel" style="display:none;"></div>
+
+    <div id="filter-menu">
+    <button id="toggleFilters" type="button">⚙️ Filters</button>
+    <div id="activeFilters"></div>
+
+    <div id="filters-panel" style="display:none;">
+        <button id="resetFiltersBtn" type="button">🔄 Reset Filters</button>
+
+        <div class="filter-section">
+        <label for="ratingSlider">Minimum rating:</label>
+        <input type="range" id="ratingSlider" min="0" max="10" step="0.1" value="6">
+        <span id="ratingValue">6</span>
+        </div>
+
+        <div class="filter-section">
+        <label for="playersSlider">Players:</label>
+        <input type="range" id="playersSlider" min="1" max="10" step="1" value="4">
+        <span id="playersValue">4</span>
+        </div>
+
+        <div class="filter-section">
+        <label for="playtimeSlider">Playtime (minutes):</label>
+        <input type="range" id="playtimeSlider" min="10" max="300" step="10" value="90">
+        <span id="playtimeValue">90</span>
+        </div>
+
+        <div class="filter-section">
+        <label for="limitSlider">Max results:</label>
+        <input type="range" id="limitSlider" min="1" max="200" value="10">
+        <span id="limitSliderValue">10</span>
+        </div>
+
+        <div class="filter-section">
+        <label for="artistInput">Artist:</label>
+        <input id="artistInput" list="artists">
+        <datalist id="artists"></datalist>
+        </div>
+
+        <div class="filter-section">
+        <label for="publisherInput">Publisher:</label>
+        <input id="publisherInput" list="publishers">
+        <datalist id="publishers"></datalist>
+        </div>
+
+        <div class="filter-section">
+        <label for="designerInput">Designer:</label>
+        <input id="designerInput" list="designers">
+        <datalist id="designers"></datalist>
+        </div>
+
+        <div class="filter-section">
+        <label for="themeInput">Theme:</label>
+        <input id="themeInput" list="themes">
+        <datalist id="themes"></datalist>
+        </div>
+
+        <div class="filter-section">
+        <label for="mechanicInput1">Mechanic 1:</label>
+        <input id="mechanicInput1" list="mechanics">
+        <datalist id="mechanics"></datalist>
+        </div>
+
+        <div class="filter-section">
+        <label for="mechanicInput2">Mechanic 2:</label>
+        <input id="mechanicInput2" list="mechanics">
+        </div>
+
+        <div class="filter-section">
+        <label for="mechanicInput3">Mechanic 3:</label>
+        <input id="mechanicInput3" list="mechanics">
+        </div>
+    </div>
+    </div>
+
+    <div id="selected-game-info-results"></div>
+    <div id="results"></div>
+  </div>
+
+  <div id="graphTab" class="tabcontent">
+    <div id="selected-game-info"></div>
+    <div id="graph"></div>
+  </div>
+
+  <div id="extraTab" class="tabcontent">
+    <div class="chart-selector">
+      <button id="ratingsBtn" type="button">Ratings</button>
+      <button id="mechanicsBtn" type="button">Mechanics</button>
+      <button id="categoriesBtn" type="button">Categories</button>
+      <button id="publicationsBtn" type="button">Publications</button>
+    </div>
+    <div id="other-graph"></div>
+  </div>
+
+  <!-- Optional: add a favicon to avoid 404 -->
+  <!-- <link rel="icon" href="favicon.ico"> -->
+</body>
+</html>
