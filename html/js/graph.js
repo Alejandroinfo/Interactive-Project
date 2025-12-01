@@ -1,7 +1,6 @@
 function renderGraph(baseGame, neighborsList, gamesData) {
   const svg = d3.select("#graph");
   svg.html("");
-
   const width = 600;
   const height = 400;
   const baseInfo = gamesData[baseGame] || {};
@@ -27,7 +26,6 @@ function renderGraph(baseGame, neighborsList, gamesData) {
 
   const uniqueReasons = [...new Set(links.map(d => d.mainReason))];
   const reasonColors = d3.scaleOrdinal(d3.schemeCategory10).domain(uniqueReasons);
-
   const simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links).id(d => d.id).distance(d => 250 - (d.score * 200)))
     .force("charge", d3.forceManyBody().strength(-250))
@@ -50,7 +48,6 @@ function renderGraph(baseGame, neighborsList, gamesData) {
       const gameB = d.target.id || d.target;
       const infoA = gamesData[gameA] || {};
       const infoB = gamesData[gameB] || {};
-
       const sharedMechanics = d.sharedMechanics || [];
       const sharedThemes = d.sharedThemes || [];
       const uniqueMechanicsA = (infoA.mechanics || []).filter(m => !sharedMechanics.includes(m));
@@ -116,11 +113,8 @@ function renderGraph(baseGame, neighborsList, gamesData) {
 function renderRatingDensity(neighborsList, gamesData) {
   const svg = d3.select("#other-graph");
   svg.html("");
-
   const width = 600;
   const height = 300;
-
-  // Extraer ratings de los vecinos
   const ratings = neighborsList
     .map(n => gamesData[n.name]?.avgRating)
     .filter(r => typeof r === "number");
@@ -143,8 +137,6 @@ function renderRatingDensity(neighborsList, gamesData) {
     .attr("height", height + 60)
     .style("display", "block")
     .style("margin", "0 auto");
-
-  // Línea de densidad
   svgEl.append("path")
     .datum(density)
     .attr("fill", "#69b3a2")
@@ -157,25 +149,18 @@ function renderRatingDensity(neighborsList, gamesData) {
       .x(d => x(d[0]))
       .y(d => y(d[1]))
     );
-
-  // Ejes
   svgEl.append("g")
     .attr("transform", `translate(0,${height - 30})`)
     .call(d3.axisBottom(x));
-
   svgEl.append("g")
     .attr("transform", "translate(40,0)")
     .call(d3.axisLeft(y));
-
-  // Título
   svgEl.append("text")
     .attr("x", width / 2)
     .attr("y", 20)
     .attr("text-anchor", "middle")
     .style("font-size", "16px")
     .text("Density of Average Ratings");
-
-  // Labels de ejes
   svgEl.append("text")
     .attr("x", width / 2)
     .attr("y", height + 20)
@@ -190,8 +175,6 @@ function renderRatingDensity(neighborsList, gamesData) {
     .attr("text-anchor", "middle")
     .style("font-size", "14px")
     .text("Density");
-
-  // Funciones auxiliares
   function Kernel_estimartor(kernel, X) {
     return function(V) {
       return X.map(x => [x, d3.mean(V, v => kernel(x - v))]);
@@ -207,13 +190,10 @@ function renderRatingDensity(neighborsList, gamesData) {
 function renderMechanicsBarChart(baseGame, neighborsList, gamesData) {
   const mount = d3.select("#other-graph");
   mount.html("");
-
   const width = 600;
   const height = 400;
 
   const baseInfo = gamesData[baseGame] || {};
-
-  // Contar mecánicas de los vecinos (usando reduce para compatibilidad)
   const neighborMechanics = neighborsList.reduce((acc, n) => {
     const arr = gamesData[n.name]?.mechanics;
     if (Array.isArray(arr)) acc.push(...arr);
@@ -245,8 +225,6 @@ function renderMechanicsBarChart(baseGame, neighborsList, gamesData) {
   const y = d3.scaleLinear()
     .domain([0, yMax])
     .range([height - 50, 40]);
-
-  // Barras con click interactivo
   svgEl.selectAll("rect.bar")
     .data(data)
     .enter().append("rect")
@@ -257,10 +235,7 @@ function renderMechanicsBarChart(baseGame, neighborsList, gamesData) {
     .attr("height", d => (height - 50) - y(d.count))
     .attr("fill", d => (baseInfo.mechanics||[]).includes(d.mechanic) ? "#FF9800" : "#2196F3")
     .on("click", (event, d) => {
-      // Mecánicas compartidas con el juego base
       const sharedMechanics = (baseInfo.mechanics || []).filter(m => m === d.mechanic);
-
-      // Temas compartidos: base vs vecinos que usan esta mecánica
       const baseThemes = baseInfo.categories || [];
       const neighborThemesForMechanic = new Set(
         neighborsList.flatMap(n => {
@@ -277,37 +252,27 @@ function renderMechanicsBarChart(baseGame, neighborsList, gamesData) {
         `Shared themes (among matches using "${d.mechanic}"): ${sharedThemes.join(", ") || "None"}`
       );
     });
-
-  // Eje X
   svgEl.append("g")
     .attr("transform", `translate(0,${height - 50})`)
     .call(d3.axisBottom(x))
     .selectAll("text")
     .attr("transform", "rotate(-45)")
     .style("text-anchor", "end");
-
-  // Eje Y con ticks enteros
   svgEl.append("g")
     .attr("transform", "translate(60,0)")
     .call(d3.axisLeft(y).ticks(yMax).tickFormat(d3.format("d")));
-
-  // Título
   svgEl.append("text")
     .attr("x", width / 2)
     .attr("y", 20)
     .attr("text-anchor", "middle")
     .style("font-size", "16px")
     .text("Top 15 Mechanics by Frequency");
-
-  // Etiqueta eje X
   svgEl.append("text")
     .attr("x", width / 2)
     .attr("y", height + 40)
     .attr("text-anchor", "middle")
     .style("font-size", "14px")
     .text("Mechanics");
-
-  // Etiqueta eje Y (desplazada para no traslapar)
   svgEl.append("text")
     .attr("transform", "rotate(-90)")
     .attr("x", -(height - 50) / 2)
@@ -319,14 +284,10 @@ function renderMechanicsBarChart(baseGame, neighborsList, gamesData) {
 function renderCategoriesPieChart(baseGame, neighborsList, gamesData) {
   const mount = d3.select("#other-graph");
   mount.html("");
-
   const width = 600;
   const height = 400;
   const radius = Math.min(width, height) / 2 - 40;
-
   const baseInfo = gamesData[baseGame] || {};
-
-  // Count categories from neighbors
   const categoriesCount = neighborsList.reduce((acc, n) => {
     const arr = gamesData[n.name]?.categories;
     if (Array.isArray(arr)) {
@@ -357,8 +318,6 @@ function renderCategoriesPieChart(baseGame, neighborsList, gamesData) {
 
   const chartGroup = svgEl.append("g")
     .attr("transform", `translate(${width/2 - 100},${height/2})`);
-
-  // Draw slices
   chartGroup.selectAll("path")
     .data(pie(data))
     .enter().append("path")
@@ -374,8 +333,6 @@ function renderCategoriesPieChart(baseGame, neighborsList, gamesData) {
         `Shared with base game: ${sharedCategories.join(", ") || "None"}`
       );
     });
-
-  // Labels inside slices with percentage
   chartGroup.selectAll("text")
     .data(pie(data))
     .enter().append("text")
@@ -384,16 +341,12 @@ function renderCategoriesPieChart(baseGame, neighborsList, gamesData) {
     .text(d => `${((d.data.count/total)*100).toFixed(1)}%`)
     .style("font-size", "12px")
     .style("text-anchor", "middle");
-
-  // Title
   svgEl.append("text")
     .attr("x", width / 2)
     .attr("y", 25)
     .attr("text-anchor", "middle")
     .style("font-size", "16px")
     .text("Top 6 Categories by Frequency");
-
-  // Legend
   const legend = svgEl.append("g")
     .attr("transform", `translate(${width - 180}, 60)`);
 
@@ -409,24 +362,11 @@ function renderCategoriesPieChart(baseGame, neighborsList, gamesData) {
   });
 }
 function renderPublicationTrend(baseGame, neighborsList, gamesData) {
-  // Defensive guards
-  if (!Array.isArray(neighborsList)) {
-    console.warn("renderPublicationTrend: neighborsList is not an array", neighborsList);
-    return;
-  }
-  if (!gamesData || typeof gamesData !== "object") {
-    console.warn("renderPublicationTrend: gamesData is not valid", gamesData);
-    return;
-  }
-
   const mount = d3.select("#other-graph");
   mount.html("");
-
   const width = 700;
   const height = 400;
   const baseInfo = gamesData?.[baseGame] || {};
-
-  // Collect publication years from neighbors
   const years = neighborsList.reduce((acc, n) => {
     const info = gamesData?.[n.name];
     const y = info?.year || info?.yearPublished;
@@ -438,8 +378,6 @@ function renderPublicationTrend(baseGame, neighborsList, gamesData) {
     mount.append("p").text("No publication data available for current matches.");
     return;
   }
-
-  // Count occurrences per year
   const yearCount = d3.rollup(years, v => v.length, d => d);
   const data = Array.from(yearCount, ([year, count]) => ({ year, count }))
     .sort((a, b) => a.year - b.year);
@@ -459,17 +397,14 @@ function renderPublicationTrend(baseGame, neighborsList, gamesData) {
     .style("display", "block")
     .style("margin", "0 auto");
 
-  // X axis
   svgEl.append("g")
     .attr("transform", `translate(0,${height - 50})`)
     .call(d3.axisBottom(x).tickFormat(d3.format("d")));
 
-  // Y axis with integer ticks
   svgEl.append("g")
     .attr("transform", "translate(60,0)")
     .call(d3.axisLeft(y).ticks(yMax).tickFormat(d3.format("d")));
 
-  // Scatter points
   svgEl.selectAll("circle")
     .data(data)
     .enter().append("circle")
@@ -490,7 +425,7 @@ function renderPublicationTrend(baseGame, neighborsList, gamesData) {
       );
     });
 
-  // Title
+
   svgEl.append("text")
     .attr("x", width / 2)
     .attr("y", 25)
@@ -498,7 +433,6 @@ function renderPublicationTrend(baseGame, neighborsList, gamesData) {
     .style("font-size", "16px")
     .text("Games Published per Year");
 
-  // X axis label
   svgEl.append("text")
     .attr("x", width / 2)
     .attr("y", height + 40)
@@ -506,7 +440,6 @@ function renderPublicationTrend(baseGame, neighborsList, gamesData) {
     .style("font-size", "14px")
     .text("Year");
 
-  // Y axis label
   svgEl.append("text")
     .attr("transform", "rotate(-90)")
     .attr("x", -(height - 50) / 2)

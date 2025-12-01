@@ -1,6 +1,4 @@
-/* Boardgame Similarity Explorer - CSS (versión final v5) */
 
-/* Global */
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
@@ -33,7 +31,6 @@ button:hover {
   background-color: #45a049;
 }
 
-/* Tabs */
 .tabs {
   margin-bottom: 20px;
 }
@@ -51,7 +48,6 @@ button:hover {
   background: #4CAF50;
   color: #fff;
 }
-/* Ocultar todo lo que no sea activo */
 .tabcontent { display: none !important; }
 .tabcontent.active { display: block !important; }
 #filter-menu {
@@ -120,7 +116,6 @@ button:hover {
   gap: 20px;
 }
 
-/* Imagen */
 .game-img {
   width: 80px;
   height: 80px;
@@ -129,10 +124,7 @@ button:hover {
   margin-right: 12px;
 }
 
-/* Info básica */
 .game-info { flex: 1; font-size: 14px; }
-
-/* Header con título y botón cerrar arriba */
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -151,13 +143,11 @@ button:hover {
   background: #fafafa;
   border-left: 2px solid #ddd;
   padding: 10px;
-  display: none; /* oculto por defecto */
+  display: none; 
 }
 .result-card.expanded .match-reasons-panel {
-  display: block; /* visible solo cuando expandido */
+  display: block; 
 }
-
-/* Botón cerrar dentro del panel */
 .close-btn {
   float: right;
   background: none;
@@ -191,8 +181,6 @@ button:hover {
   font-size: 14px;
   line-height: 1.4;
 }
-
-/* Selector de gráficos */
 .chart-selector {
   margin-bottom: 20px;
   text-align: center;
@@ -215,13 +203,11 @@ button:hover {
   background-color: #4CAF50;
   color: #fff;
 }
-
-/* Botón Amazon */
 .amazon-btn {
   display: inline-block;
   margin-left: 10px;
   padding: 4px 8px;
-  background-color: #ff9900; /* color característico de Amazon */
+  background-color: #ff9900; 
   color: #fff;
   font-size: 0.85em;
   text-decoration: none;
@@ -231,8 +217,6 @@ button:hover {
 .amazon-btn:hover {
   background-color: #e68a00;
 }
-
-/* Tabla comparativa */
 .comparison-table {
   border-collapse: collapse;
   margin-top: 15px;
@@ -257,7 +241,6 @@ h4 {
   color: #333;
 }
 
-/* Botón BGG */
 .bgg-btn {
   display: inline-block;
   margin-left: 8px;
@@ -291,12 +274,10 @@ h4 {
   z-index: 9999;
 }
 .tooltip-content div { margin: 2px 0; }
-
-/* Centrar y escalar todos los gráficos */
 #graph svg,
 #other-graph svg {
-  display: block;        /* ocupa toda la línea */
-  margin: 0 auto;        /* centra horizontalmente */
-  transform: scale(1.3); /* aumenta tamaño en 30% */
-  transform-origin: center top; /* mantiene centrado al escalar */
+  display: block;        
+  margin: 0 auto;        
+  transform: scale(1.3); 
+  transform-origin: center top; 
 }

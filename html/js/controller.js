@@ -1,7 +1,5 @@
 function runSearch(baseGame, datasets) {
   const { neighborsData, gamesData } = datasets;
-
-  // Early exit if baseGame is missing or not in gamesData
   if (!baseGame || !gamesData[baseGame]) {
     d3.select("#results").html("");
     d3.select("#graph").html("");
@@ -10,12 +8,8 @@ function runSearch(baseGame, datasets) {
     d3.select("#other-graph").html("");
     return;
   }
-
-  // ✅ baseGame is defined here, so set the input value safely
   document.getElementById("gameInput").value = baseGame;
-
   window.renderSelectedGameInfo?.(baseGame, gamesData);
-
   const excludePrefix = !!document.getElementById("excludePrefix")?.checked;
   const minRating = parseFloat(document.getElementById("ratingSlider")?.value ?? "6");
   const limit = parseInt(document.getElementById("limitSlider")?.value ?? "10", 10);
@@ -27,8 +21,6 @@ function runSearch(baseGame, datasets) {
   const designerFilter = document.getElementById("designerInput")?.value || "";
   const themeFilter = document.getElementById("themeInput")?.value || "";
   const mechanicFilters = window.getMechanicFilters?.() || [];
-
-  // ✅ ensure neighborsList is always an array
   let neighborsList = Array.isArray(neighborsData[baseGame])
     ? [...neighborsData[baseGame]]
     : [];
@@ -39,7 +31,6 @@ function runSearch(baseGame, datasets) {
     neighborsList = neighborsList.filter(n => !String(n.name || "").startsWith(baseGame));
   }
 
-  // Apply filters
   neighborsList = neighborsList.filter(n => {
     const info = gamesData[n.name];
     if (!info) return false;
@@ -74,8 +65,6 @@ if (themeFilter) activeFilters.push(`Theme: ${themeFilter}`);
 mechanicFilters.forEach((m,i) => activeFilters.push(`Mechanic ${i+1}: ${m}`));
 
 document.getElementById("activeFilters").innerHTML = activeFilters.map(f => `<span class="filter-tag">${f}</span>`).join(" ");
-
-  // Add reasons
   neighborsList = neighborsList.map(n => {
     let reasons =
       (Array.isArray(n.reasons) && n.reasons.length ? n.reasons : null) ||
@@ -89,17 +78,10 @@ document.getElementById("activeFilters").innerHTML = activeFilters.map(f => `<sp
     return { ...n, reasons };
   });
 
-  // Limit results
   neighborsList = neighborsList.slice(0, Math.max(0, limit));
-
-  // Save globally
   window.currentNeighbors = neighborsList;
-
-  // Render main results
   window.renderCards?.(baseGame, neighborsList, gamesData);
   window.renderGraph?.(baseGame, neighborsList, gamesData);
-
-  // Render secondary charts
   window.renderRatingHistogram?.(neighborsList, gamesData);
   window.renderMechanicsBarChart?.(baseGame, neighborsList, gamesData);
   window.renderCategoriesPieChart?.(baseGame, neighborsList, gamesData);

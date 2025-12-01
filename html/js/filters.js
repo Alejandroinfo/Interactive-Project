@@ -1,4 +1,3 @@
-// Boardgame Similarity Explorer - filters.js
 
 function explainMatch(baseGame, neighborName, gamesData) {
   const neighborInfo = gamesData[neighborName];
@@ -42,6 +41,5 @@ function getMechanicFilters() {
   return values;
 }
 
-// Expose globally
 window.getMechanicFilters = getMechanicFilters;
 window.explainMatch = explainMatch;

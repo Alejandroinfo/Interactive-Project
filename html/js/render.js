@@ -1,4 +1,3 @@
-// Boardgame Similarity Explorer - render.js
 
 function renderSelectedGameInfo(gameName, gamesData) {
   const info = gamesData[gameName];
@@ -7,15 +6,13 @@ function renderSelectedGameInfo(gameName, gamesData) {
   const imgSrc = info.image && info.image !== "" ? info.image : "images/placeholder.png";
   const shortDesc = info.description ? info.description.slice(0, 300) : "No description available.";
   const fullDesc = info.description || "";
-
-  // Layout en dos columnas
   const htmlBlock = `
     <div style="display:flex; gap:20px;">
       <div style="flex:1;">
         <h3>${gameName}</h3>
         <img src="${imgSrc}" alt="${gameName}"
              style="width:150px;height:150px;object-fit:cover;border-radius:6px;margin-bottom:10px;">
-        <p id="desc-${gameName}">${shortDesc}${info.description && info.description.length > 300 ? '... <a href="#" id="see-more-'+gameName+'">ver más</a>' : ''}</p>
+        <p id="desc-${gameName}">${shortDesc}${info.description && info.description.length > 300 ? '... <a href="#" id="see-more-'+gameName+'">see more</a>' : ''}</p>
       </div>
       <div style="flex:1;">
         <p>⭐ Rating: ${info.avgRating ?? "N/A"}</p>
@@ -31,11 +28,9 @@ function renderSelectedGameInfo(gameName, gamesData) {
     </div>
   `;
 
-  // Render en ambos paneles
   d3.select("#selected-game-info").html(htmlBlock);
   d3.select("#selected-game-info-results").html(htmlBlock);
 
-  // Listener para "ver más"
   const seeMore = document.getElementById(`see-more-${gameName}`);
   const descEl = document.getElementById(`desc-${gameName}`);
   if (seeMore && descEl) {
@@ -97,11 +92,9 @@ function renderCards(baseGame, neighborsList, gamesData) {
       })
 
     infoDiv.append("p").text(`⭐ ${info.avgRating ?? "N/A"} | ⏱️ ${info.playtime ?? "?"} min`)
-
     const reasonsPanel = card.append("div").attr("class", "match-reasons-panel")
     const reasonsHeader = reasonsPanel.append("div").attr("class", "reasons-header")
     reasonsHeader.append("h5").text("Match reasons")
-
     reasonsHeader.append("button")
       .attr("class", "close-btn")
       .text("✖ Close")
@@ -159,8 +152,6 @@ function renderCards(baseGame, neighborsList, gamesData) {
 window.renderNetworkCloud = function(gamesData) {
   const container = d3.select("#other-graph");
   container.html("<h3>Network Cloud (mecánicas)</h3>");
-
-  // Construir nodos y enlaces
   const mechCounts = {};
   const links = [];
   Object.values(gamesData).forEach(g => {
@@ -214,7 +205,6 @@ window.renderNetworkCloud = function(gamesData) {
   function dragged(event,d){ d.fx=event.x; d.fy=event.y; }
   function dragended(event,d){ if(!event.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }
 };
-// Expose globally
 window.renderComparison = function(gameA, gameB, gamesData) {
   const infoA = gamesData[gameA];
   const infoB = gamesData[gameB];
@@ -222,8 +212,6 @@ window.renderComparison = function(gameA, gameB, gamesData) {
 
   const container = d3.select("#other-graph");
   container.html(`<h3>Comparison: ${gameA} vs ${gameB}</h3>`);
-
-  // Basic metrics table
   const data = [
     { axis: "Rating", A: infoA.avgRating, B: infoB.avgRating },
     { axis: "Min Players", A: infoA.minPlayers, B: infoB.minPlayers },
@@ -240,22 +228,16 @@ window.renderComparison = function(gameA, gameB, gamesData) {
       <td>${row.B ?? "N/A"}</td>
     `);
   });
-
-  // Mechanics
   const mechsA = new Set(infoA.mechanics || []);
   const mechsB = new Set(infoB.mechanics || []);
   const sharedMechs = [...mechsA].filter(m => mechsB.has(m));
   const onlyMechsA = [...mechsA].filter(m => !mechsB.has(m));
   const onlyMechsB = [...mechsB].filter(m => !mechsA.has(m));
-
-  // Themes
   const themesA = new Set(infoA.categories || []);
   const themesB = new Set(infoB.categories || []);
   const sharedThemes = [...themesA].filter(t => themesB.has(t));
   const onlyThemesA = [...themesA].filter(t => !themesB.has(t));
   const onlyThemesB = [...themesB].filter(t => !themesA.has(t));
-
-  // Shared section first
   if (sharedMechs.length || sharedThemes.length ||
       (infoA.designer && infoA.designer === infoB.designer) ||
       (infoA.publisher && infoA.publisher === infoB.publisher) ||
@@ -278,7 +260,6 @@ window.renderComparison = function(gameA, gameB, gamesData) {
     }
   }
 
-  // Unique section second
   container.append("h4").text("Unique Information");
   container.append("p").html(`<b>Only ${gameA}:</b> Mechanics: ${onlyMechsA.join(", ") || "None"}; Themes: ${onlyThemesA.join(", ") || "None"}`);
   container.append("p").html(`<b>Only ${gameB}:</b> Mechanics: ${onlyMechsB.join(", ") || "None"}; Themes: ${onlyThemesB.join(", ") || "None"}`);

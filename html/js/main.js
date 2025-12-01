@@ -21,23 +21,17 @@ window.populateDatalist = populateDatalist;
 
 document.addEventListener("DOMContentLoaded", () => {
   openTab("resultsTab");
-
-  // Tab switching
   document.querySelectorAll(".tablink").forEach(btn => {
     btn.addEventListener("click", () => openTab(btn.getAttribute("data-tab")));
   });
 
-  // Toggle filters
   document.getElementById("toggleFilters")?.addEventListener("click", () => {
     const panel = document.getElementById("filters-panel");
     if (!panel) return;
     panel.style.display = panel.style.display === "none" ? "block" : "none";
   });
 
-  // ✅ Chart button wiring
   const getBaseGame = () => document.getElementById("gameInput")?.value.trim();
-
-  // Ratings chart → ahora usa renderRatingDensity
   document.getElementById("ratingsBtn")?.addEventListener("click", () => {
     window.renderRatingDensity?.(window.currentNeighbors, window.gamesData);
   });
@@ -59,8 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!baseGame) return;
     window.renderPublicationTrend?.(baseGame, window.currentNeighbors, window.gamesData);
   });
-
-  // Search button and Enter key wiring
   document.getElementById("searchBtn")?.addEventListener("click", () => {
     runSearch(document.getElementById("gameInput")?.value, window.datasets);
   });
@@ -70,12 +62,9 @@ document.addEventListener("DOMContentLoaded", () => {
       runSearch(gameInput.value, window.datasets);
     }
   });
-
-  // ✅ Reset button wiring
   const resetBtn = document.getElementById("resetFiltersBtn");
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
-      // Reset sliders
       const sliders = [
         { id: "ratingSlider", value: 6, span: "ratingValue" },
         { id: "playersSlider", value: 4, span: "playersValue" },
@@ -88,8 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (s) s.value = value;
         if (t) t.textContent = value;
       });
-
-      // Clear text inputs
       [
         "artistInput","publisherInput","designerInput","themeInput",
         "mechanicInput1","mechanicInput2","mechanicInput3"
@@ -97,8 +84,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const el = document.getElementById(id);
         if (el) el.value = "";
       });
-
-      // Clear active filters tags
       const activeFilters = document.getElementById("activeFilters");
       if (activeFilters) activeFilters.innerHTML = "";
     });
@@ -345,8 +330,6 @@ async function init() {
 
     renderStep();
     });
-
-    // Chart selector visual state
     document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".chart-selector button").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -354,8 +337,6 @@ async function init() {
         btn.classList.add("active-chart");
         });
     });
-
-    // Wire chart actions to pass baseGame correctly
     const getBaseGame = () => document.getElementById("gameInput")?.value.trim();
 
     document.getElementById("ratingsBtn")?.addEventListener("click", () => {
@@ -381,5 +362,4 @@ async function init() {
     });
     });
     }
-    // Keep init() as-is at the end
     init();
