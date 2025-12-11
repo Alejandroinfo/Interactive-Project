@@ -1,12 +1,16 @@
 function openTab(tabName) {
   document.querySelectorAll(".tabcontent").forEach(el => el.classList.remove("active"));
-  document.querySelectorAll(".tablink").forEach(btn => btn.classList.remove("active-tab"));
+  document.querySelectorAll(".tablinks").forEach(btn => btn.classList.remove("active-tab"));
+  
   const target = document.getElementById(tabName);
-  if (target) target.classList.add("active");
-  const activeBtn = document.querySelector(`.tablink[data-tab="${tabName}"]`);
+  if (target) {
+    target.classList.add("active");
+    target.scrollIntoView({ behavior: "smooth" });
+  }
+
+  const activeBtn = document.querySelector(`.tablinks[data-tab="${tabName}"]`);
   if (activeBtn) activeBtn.classList.add("active-tab");
 }
-
 function populateDatalist(id, values) {
   const dl = document.getElementById(id);
   if (!dl) return;
@@ -18,7 +22,56 @@ function populateDatalist(id, values) {
   });
 }
 window.populateDatalist = populateDatalist;
-
+document.addEventListener("DOMContentLoaded", () => {
+  const svgWidth = 600, svgHeight = 300;
+  const svg = d3.select("#about-diagram")
+    .append("svg")
+    .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("width", "100%")
+    .style("height", "100%");
+  const nodes = [
+    { id: "Mechanics", x: 100, y: 80 },
+    { id: "Themes", x: 100, y: 180 },
+    { id: "Other variables", x: 100, y: 260 },
+    { id: "Similarity Score", x: 400, y: 170 }
+  ];
+  const links = [
+    { source: "Mechanics", target: "Similarity Score" },
+    { source: "Themes", target: "Similarity Score" },
+    { source: "Other variables", target: "Similarity Score" }
+  ];
+  svg.selectAll("line")
+    .data(links)
+    .enter()
+    .append("line")
+    .attr("x1", d => nodes.find(n => n.id === d.source).x)
+    .attr("y1", d => nodes.find(n => n.id === d.source).y)
+    .attr("x2", d => nodes.find(n => n.id === d.target).x)
+    .attr("y2", d => nodes.find(n => n.id === d.target).y)
+    .attr("stroke", "#2196F3")
+    .attr("stroke-width", 2);
+  svg.selectAll("rect")
+    .data(nodes)
+    .enter()
+    .append("rect")
+    .attr("x", d => d.x - 70)
+    .attr("y", d => d.y - 20)
+    .attr("width", 140)
+    .attr("height", 40)
+    .attr("rx", 8)
+    .attr("fill", d => d.id === "Similarity Score" ? "#FF9800" : "#4CAF50");
+  svg.selectAll("text")
+    .data(nodes)
+    .enter()
+    .append("text")
+    .attr("x", d => d.x)
+    .attr("y", d => d.y + 5)
+    .attr("text-anchor", "middle")
+    .style("fill", "white")
+    .style("font-weight", "bold")
+    .text(d => d.id);
+});
 document.addEventListener("DOMContentLoaded", () => {
   openTab("resultsTab");
   document.querySelectorAll(".tablink").forEach(btn => {
@@ -32,10 +85,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const getBaseGame = () => document.getElementById("gameInput")?.value.trim();
-  document.getElementById("ratingsBtn")?.addEventListener("click", () => {
-    window.renderRatingDensity?.(window.currentNeighbors, window.gamesData);
-  });
 
+  document.getElementById("ratingsBtn")?.addEventListener("click", () => {
+    window.renderDensityComparison?.(
+      window.currentBaseGame,
+      window.currentNeighbors,
+      window.gamesData,
+      5000
+    );
+  });
   document.getElementById("mechanicsBtn")?.addEventListener("click", () => {
     const baseGame = getBaseGame();
     if (!baseGame) return;
@@ -53,41 +111,33 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!baseGame) return;
     window.renderPublicationTrend?.(baseGame, window.currentNeighbors, window.gamesData);
   });
+
+  document.getElementById("wordcloudBtn")?.addEventListener("click", () => {
+    const baseGame = getBaseGame();
+    if (!baseGame) return;
+    window.renderWordCloud?.(baseGame, window.currentNeighbors, window.gamesData);
+  });
+
+  document.getElementById("globalLimitSlider")?.addEventListener("input", e => {
+    const limit = parseInt(e.target.value, 10);
+    document.getElementById("globalLimitValue").textContent = limit;
+    window.renderDensityComparison?.(window.currentBaseGame, window.currentNeighbors, window.gamesData, limit);
+    window.renderThemesComparison?.(window.currentBaseGame, window.currentNeighbors, window.gamesData, limit);
+    window.renderMechanicsComparison?.(window.currentBaseGame, window.currentNeighbors, window.gamesData, limit);
+    window.renderPublicationComparison?.(window.currentBaseGame, window.currentNeighbors, window.gamesData, limit);
+  });
+
+  // ✅ Search
   document.getElementById("searchBtn")?.addEventListener("click", () => {
     runSearch(document.getElementById("gameInput")?.value, window.datasets);
   });
+
   const gameInput = document.getElementById("gameInput");
   gameInput?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       runSearch(gameInput.value, window.datasets);
     }
   });
-  const resetBtn = document.getElementById("resetFiltersBtn");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      const sliders = [
-        { id: "ratingSlider", value: 6, span: "ratingValue" },
-        { id: "playersSlider", value: 4, span: "playersValue" },
-        { id: "playtimeSlider", value: 90, span: "playtimeValue" },
-        { id: "limitSlider", value: 10, span: "limitSliderValue" }
-      ];
-      sliders.forEach(({id,value,span}) => {
-        const s = document.getElementById(id);
-        const t = document.getElementById(span);
-        if (s) s.value = value;
-        if (t) t.textContent = value;
-      });
-      [
-        "artistInput","publisherInput","designerInput","themeInput",
-        "mechanicInput1","mechanicInput2","mechanicInput3"
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = "";
-      });
-      const activeFilters = document.getElementById("activeFilters");
-      if (activeFilters) activeFilters.innerHTML = "";
-    });
-  }
 });
 async function init() {
     const [neighborsData, gamesData, descriptionsData] = await Promise.all([
@@ -104,7 +154,6 @@ async function init() {
 
     window.gamesData = gamesData;
     window.datasets = { neighborsData, gamesData, descriptionsData };
-
     const gameInput = document.getElementById("gameInput");
     const datalistGames = document.getElementById("games");
     if (gameInput && datalistGames) {

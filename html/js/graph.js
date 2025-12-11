@@ -1,6 +1,6 @@
-function renderGraph(baseGame, neighborsList, gamesData) {
-  const svg = d3.select("#graph");
-  svg.html("");
+function renderGraph(baseGame, neighborsList, gamesData, containerId = "#graph-container") {
+  const container = d3.select(containerId);
+  container.html(""); 
   const width = 600;
   const height = 400;
   const baseInfo = gamesData[baseGame] || {};
@@ -14,82 +14,65 @@ function renderGraph(baseGame, neighborsList, gamesData) {
     const info = gamesData[n.name] || {};
     const sharedMechanics = (baseInfo.mechanics || []).filter(m => (info.mechanics || []).includes(m));
     const sharedThemes = (baseInfo.categories || []).filter(c => (info.categories || []).includes(c));
-    const sharedDesigners = baseInfo.designer && info.designer && baseInfo.designer === info.designer ? [info.designer] : [];
-
     let mainReason = "Other";
     if (sharedMechanics.length) mainReason = `Mechanic: ${sharedMechanics[0]}`;
     else if (sharedThemes.length) mainReason = `Theme: ${sharedThemes[0]}`;
-    else if (sharedDesigners.length) mainReason = `Designer: ${sharedDesigners[0]}`;
-
-    return { source: baseGame, target: n.name, score: n.score, mainReason, sharedMechanics, sharedThemes };
+    return { source: baseGame, target: n.name, score: n.score, mainReason };
   });
 
   const uniqueReasons = [...new Set(links.map(d => d.mainReason))];
   const reasonColors = d3.scaleOrdinal(d3.schemeCategory10).domain(uniqueReasons);
+
+  const svg = container.append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
   const simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links).id(d => d.id).distance(d => 250 - (d.score * 200)))
     .force("charge", d3.forceManyBody().strength(-250))
     .force("center", d3.forceCenter(width / 2, height / 2));
 
-  const svgEl = svg.append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("display", "block")
-    .style("margin", "0 auto");
-
-  const link = svgEl.append("g")
+  const link = svg.append("g")
     .selectAll("line")
     .data(links)
     .enter().append("line")
     .attr("stroke", d => reasonColors(d.mainReason))
     .attr("stroke-width", d => 2 + (d.score * 8))
-    .on("click", (event, d) => {
-      const gameA = d.source.id || d.source;
-      const gameB = d.target.id || d.target;
-      const infoA = gamesData[gameA] || {};
-      const infoB = gamesData[gameB] || {};
-      const sharedMechanics = d.sharedMechanics || [];
-      const sharedThemes = d.sharedThemes || [];
-      const uniqueMechanicsA = (infoA.mechanics || []).filter(m => !sharedMechanics.includes(m));
-      const uniqueMechanicsB = (infoB.mechanics || []).filter(m => !sharedMechanics.includes(m));
-      const uniqueThemesA = (infoA.categories || []).filter(c => !sharedThemes.includes(c));
-      const uniqueThemesB = (infoB.categories || []).filter(c => !sharedThemes.includes(c));
+link.on("click", (event, d) => {
+  const gameA = d.source.id || d.source;
+  const gameB = d.target.id || d.target;
 
-      window.renderComparison(gameA, gameB, window.gamesData, {
-        sharedMechanics,
-        sharedThemes,
-        uniqueMechanicsA,
-        uniqueMechanicsB,
-        uniqueThemesA,
-        uniqueThemesB
-      });
-      window.openTab && window.openTab("extraTab");
-    });
+  window.selectedComparison = { gameA, gameB };
+  window.renderComparison(gameA, gameB, window.gamesData);
+});
 
-  const node = svgEl.append("g")
+
+  const node = svg.append("g")
     .selectAll("circle")
     .data(nodes)
     .enter().append("circle")
     .attr("r", d => d.type === "base" ? 12 : 8)
     .attr("fill", d => d.type === "base" ? "#2196F3" : "#ccc")
-    .on("click", (event, d) => {
-      if (d.type === "neighbor") {
-        window.runSearch(d.id, window.datasets);
-      }
-    })
     .call(d3.drag()
       .on("start", dragstarted)
       .on("drag", dragged)
       .on("end", dragended));
 
-  const label = svgEl.append("g")
-    .selectAll("text")
-    .data(nodes)
-    .enter().append("text")
-    .text(d => d.id)
-    .attr("font-size", "10px")
-    .attr("dx", 12)
-    .attr("dy", ".35em");
+
+  const tooltip = d3.select("body").append("div")
+    .attr("class", "graph-tooltip")
+    .style("display", "none");
+
+  node.on("mouseover", (event, d) => {
+    tooltip.style("display", "block").html(d.id);
+  })
+  .on("mousemove", (event) => {
+    tooltip.style("left", (event.pageX + 10) + "px")
+           .style("top", (event.pageY + 10) + "px");
+  })
+  .on("mouseout", () => {
+    tooltip.style("display", "none");
+  });
 
   simulation.on("tick", () => {
     link.attr("x1", d => d.source.x)
@@ -97,360 +80,498 @@ function renderGraph(baseGame, neighborsList, gamesData) {
         .attr("x2", d => d.target.x)
         .attr("y2", d => d.target.y);
     node.attr("cx", d => d.x).attr("cy", d => d.y);
-    label.attr("x", d => d.x).attr("y", d => d.y);
   });
 
-  const legend = svgEl.append("g").attr("transform", `translate(${width - 160}, 20)`);
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width - 160}, 20)`);
+
   uniqueReasons.forEach((r, i) => {
-    legend.append("rect").attr("x", 0).attr("y", i * 20).attr("width", 12).attr("height", 12).attr("fill", reasonColors(r));
-    legend.append("text").attr("x", 20).attr("y", i * 20 + 10).text(r).attr("font-size", "12px");
+    legend.append("rect")
+      .attr("x", 0)
+      .attr("y", i * 20)
+      .attr("width", 12)
+      .attr("height", 12)
+      .attr("fill", reasonColors(r));
+
+    legend.append("text")
+      .attr("x", 20)
+      .attr("y", i * 20 + 10)
+      .text(r)
+      .attr("font-size", "12px")
+      .attr("alignment-baseline", "middle");
   });
 
-  function dragstarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
-  function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
-  function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
-}
-function renderRatingDensity(neighborsList, gamesData) {
-  const svg = d3.select("#other-graph");
-  svg.html("");
-  const width = 600;
-  const height = 300;
-  const ratings = neighborsList
-    .map(n => gamesData[n.name]?.avgRating)
-    .filter(r => typeof r === "number");
 
-  if (!ratings.length) {
-    svg.append("p").text("No rating data available for current matches.");
+  function dragstarted(event, d) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x; d.fy = d.y;
+  }
+  function dragged(event, d) {
+    d.fx = event.x; d.fy = event.y;
+  }
+  function dragended(event, d) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null; d.fy = null;
+  }
+}
+
+function renderDensityComparison(baseGame, neighborsList, gamesData, limit = 5000) {
+  const containerGlobal = d3.select("#density-global");
+  const containerLocal = d3.select("#density-local");
+  containerGlobal.html("");
+  containerLocal.html("");
+
+  if (!gamesData || !Object.keys(gamesData).length) {
+    containerGlobal.append("p").text("No data available.");
+    containerLocal.append("p").text("No data available.");
     return;
   }
 
-  const x = d3.scaleLinear().domain([0, 10]).range([40, width - 20]);
-  const kde = Kernel_estimartor(epac_kernel(0.3), x.ticks(40));
-  const density = kde(ratings);
+  const allGames = Object.values(gamesData)
+    .filter(d => Number.isFinite(d.avgRating))
+    .sort((a, b) => b.avgRating - a.avgRating)
+    .slice(0, limit);
 
-  const y = d3.scaleLinear()
-    .domain([0, d3.max(density, d => d[1])])
-    .range([height - 30, 20]);
+  const allRatings = allGames.map(d => d.avgRating);
+  const localGames = [gamesData[baseGame], ...neighborsList.map(n => gamesData[n.name])].filter(Boolean);
+  const localRatings = localGames.map(g => g.avgRating).filter(Number.isFinite);
 
-  const svgEl = svg.append("svg")
-    .attr("width", width)
-    .attr("height", height + 60)
-    .style("display", "block")
-    .style("margin", "0 auto");
-  svgEl.append("path")
-    .datum(density)
-    .attr("fill", "#69b3a2")
-    .attr("opacity", 0.5)
-    .attr("stroke", "#000")
-    .attr("stroke-width", 1.5)
-    .attr("stroke-linejoin", "round")
-    .attr("d", d3.line()
-      .curve(d3.curveBasis)
-      .x(d => x(d[0]))
-      .y(d => y(d[1]))
-    );
-  svgEl.append("g")
-    .attr("transform", `translate(0,${height - 30})`)
-    .call(d3.axisBottom(x));
-  svgEl.append("g")
-    .attr("transform", "translate(40,0)")
-    .call(d3.axisLeft(y));
-  svgEl.append("text")
-    .attr("x", width / 2)
-    .attr("y", 20)
-    .attr("text-anchor", "middle")
-    .style("font-size", "16px")
-    .text("Density of Average Ratings");
-  svgEl.append("text")
-    .attr("x", width / 2)
-    .attr("y", height + 20)
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Average Rating");
-
-  svgEl.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -height / 2)
-    .attr("y", 15)
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Density");
-  function Kernel_estimartor(kernel, X) {
-    return function(V) {
-      return X.map(x => [x, d3.mean(V, v => kernel(x - v))]);
-    };
+  function computeStats(arr) {
+    if (!arr.length) return null;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mean = d3.mean(arr);
+    const median = d3.median(arr);
+    const min = d3.min(arr);
+    const max = d3.max(arr);
+    return { mean, median, min, max };
   }
-  function epac_kernel(bandwidth) {
-    return function(u) {
-      u /= bandwidth;
-      return Math.abs(u) <= 1 ? 0.75 * (1 - u * u) / bandwidth : 0;
-    };
+
+  function drawStats(container, stats) {
+    if (!stats) return;
+    container.append("div")
+      .attr("class", "density-stats")
+      .html(
+        `<b>Mean:</b> ${stats.mean.toFixed(2)} |
+         <b>Median:</b> ${stats.median.toFixed(2)} |
+         <b>Min:</b> ${stats.min.toFixed(2)} |
+         <b>Max:</b> ${stats.max.toFixed(2)}`
+      );
   }
+
+  function drawDensity(container, ratings, title, gameList = []) {
+    if (!ratings.length) return;
+
+    const width = 380, height = 260;
+    const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+
+    const wrapper = container.append("div").style("position", "relative");
+
+    const svg = wrapper.append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    const tooltip = wrapper.append("div")
+      .attr("class", "density-tooltip")
+      .style("position", "absolute")
+      .style("background", "rgba(0,0,0,0.85)")
+      .style("color", "white")
+      .style("padding", "8px 10px")
+      .style("border-radius", "6px")
+      .style("font-size", "12px")
+      .style("pointer-events", "none")
+      .style("opacity", 0)
+      .style("z-index", 50);
+
+    const x = d3.scaleLinear().domain([0, 10]).range([margin.left, width - margin.right]);
+    const bins = d3.histogram().domain(x.domain()).thresholds(30)(ratings);
+    const total = ratings.length;
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(bins, d => d.length / total) || 1])
+      .range([height - margin.bottom, margin.top]);
+
+    const line = d3.line()
+      .x(d => x(d.x0))
+      .y(d => y(d.length / total));
+
+    svg.append("path")
+      .datum(bins)
+      .attr("fill", "none")
+      .attr("stroke", "#4CAF50")
+      .attr("stroke-width", 2)
+      .attr("d", line);
+
+    svg.append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x));
+
+    svg.append("g")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y));
+
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", margin.top - 5)
+      .attr("text-anchor", "middle")
+      .style("font-weight", "bold")
+      .text(title);
+
+    svg.append("rect")
+      .attr("width", width - margin.left - margin.right)
+      .attr("height", height - margin.top - margin.bottom)
+      .attr("x", margin.left)
+      .attr("y", margin.top)
+      .attr("fill", "transparent")
+      .on("mousemove", function (event) {
+        const [mx] = d3.pointer(event, this);
+        const ratingValue = x.invert(mx);
+        const bin = bins.find(b => ratingValue >= b.x0 && ratingValue < b.x1);
+
+        if (!bin) {
+          tooltip.style("opacity", 0);
+          return;
+        }
+
+        const matches = bin.map(r => {
+          const game = gameList.find(g => g.avgRating === r);
+          return game ? `${game.name} (${r.toFixed(2)})` : r.toFixed(2);
+        });
+
+        tooltip
+          .style("opacity", 1)
+          .html(
+            `<b>Rating range:</b> ${bin.x0.toFixed(2)}–${bin.x1.toFixed(2)}<br>
+             <b>Games:</b><br>
+             ${matches.length ? matches.join("<br>") : "None"}`
+          )
+          .style("left", (event.offsetX + 15) + "px")
+          .style("top", (event.offsetY - 40) + "px");
+      })
+      .on("mouseleave", () => tooltip.style("opacity", 0));
+  }
+
+  drawDensity(containerGlobal, allRatings, "Ratings (All games)", allGames);
+  drawStats(containerGlobal, computeStats(allRatings));
+
+  drawDensity(containerLocal, localRatings, "Ratings (Base + Neighbors)", localGames);
+  drawStats(containerLocal, computeStats(localRatings));
 }
-function renderMechanicsBarChart(baseGame, neighborsList, gamesData) {
-  const mount = d3.select("#other-graph");
-  mount.html("");
-  const width = 600;
-  const height = 400;
+function renderMechanicsComparison(baseGame, neighborsList, gamesData, limit = 5000) {
+  const containerGlobal = d3.select("#mechanics-global");
+  const containerLocal = d3.select("#mechanics-local");
+  containerGlobal.html(""); 
+  containerLocal.html("");
 
-  const baseInfo = gamesData[baseGame] || {};
-  const neighborMechanics = neighborsList.reduce((acc, n) => {
-    const arr = gamesData[n.name]?.mechanics;
-    if (Array.isArray(arr)) acc.push(...arr);
-    return acc;
-  }, []);
-
-  if (!neighborMechanics.length) {
-    mount.append("p").text("No mechanics data available for current matches.");
+  if (!gamesData || !Object.keys(gamesData).length) {
+    containerGlobal.append("p").text("No data available.");
+    containerLocal.append("p").text("No data available.");
     return;
   }
 
-  const mechanicsCount = d3.rollup(neighborMechanics, v => v.length, d => d);
-  const data = Array.from(mechanicsCount, ([mechanic, count]) => ({ mechanic, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 15);
+  const allGames = Object.values(gamesData)
+    .filter(d => Array.isArray(d.mechanics) && Number.isFinite(d.avgRating))
+    .sort((a, b) => b.avgRating - a.avgRating)
+    .slice(0, limit);
 
-  const svgEl = mount.append("svg")
-    .attr("width", width)
-    .attr("height", height + 120)
-    .style("display", "block")
-    .style("margin", "0 auto");
+  const globalMechanics = d3.rollup(
+    allGames.flatMap(d => d.mechanics),
+    v => v.length,
+    d => d
+  );
 
-  const x = d3.scaleBand()
-    .domain(data.map(d => d.mechanic))
-    .range([60, width - 20])
-    .padding(0.2);
 
-  const yMax = d3.max(data, d => d.count) || 1;
-  const y = d3.scaleLinear()
-    .domain([0, yMax])
-    .range([height - 50, 40]);
-  svgEl.selectAll("rect.bar")
-    .data(data)
-    .enter().append("rect")
-    .attr("class", "bar")
-    .attr("x", d => x(d.mechanic))
-    .attr("y", d => y(d.count))
-    .attr("width", x.bandwidth())
-    .attr("height", d => (height - 50) - y(d.count))
-    .attr("fill", d => (baseInfo.mechanics||[]).includes(d.mechanic) ? "#FF9800" : "#2196F3")
-    .on("click", (event, d) => {
-      const sharedMechanics = (baseInfo.mechanics || []).filter(m => m === d.mechanic);
-      const baseThemes = baseInfo.categories || [];
-      const neighborThemesForMechanic = new Set(
-        neighborsList.flatMap(n => {
-          const g = gamesData[n.name] || {};
-          const mechs = Array.isArray(g.mechanics) ? g.mechanics : [];
-          const cats = Array.isArray(g.categories) ? g.categories : [];
-          return mechs.includes(d.mechanic) ? cats : [];
-        })
-      );
-      const sharedThemes = baseThemes.filter(c => neighborThemesForMechanic.has(c));
+  const localGames = [gamesData[baseGame], ...neighborsList.map(n => gamesData[n.name])].filter(Boolean);
+  const localMechanics = d3.rollup(
+    localGames.flatMap(d => d.mechanics || []),
+    v => v.length,
+    d => d
+  );
 
-      alert(
-        `Shared mechanics: ${sharedMechanics.join(", ") || "None"}\n` +
-        `Shared themes (among matches using "${d.mechanic}"): ${sharedThemes.join(", ") || "None"}`
-      );
-    });
-  svgEl.append("g")
-    .attr("transform", `translate(0,${height - 50})`)
-    .call(d3.axisBottom(x))
-    .selectAll("text")
-    .attr("transform", "rotate(-45)")
-    .style("text-anchor", "end");
-  svgEl.append("g")
-    .attr("transform", "translate(60,0)")
-    .call(d3.axisLeft(y).ticks(yMax).tickFormat(d3.format("d")));
-  svgEl.append("text")
-    .attr("x", width / 2)
-    .attr("y", 20)
-    .attr("text-anchor", "middle")
-    .style("font-size", "16px")
-    .text("Top 15 Mechanics by Frequency");
-  svgEl.append("text")
-    .attr("x", width / 2)
-    .attr("y", height + 40)
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Mechanics");
-  svgEl.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -(height - 50) / 2)
-    .attr("y", 20)
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Number of Games");
-}
-function renderCategoriesPieChart(baseGame, neighborsList, gamesData) {
-  const mount = d3.select("#other-graph");
-  mount.html("");
-  const width = 600;
-  const height = 400;
-  const radius = Math.min(width, height) / 2 - 40;
-  const baseInfo = gamesData[baseGame] || {};
-  const categoriesCount = neighborsList.reduce((acc, n) => {
-    const arr = gamesData[n.name]?.categories;
-    if (Array.isArray(arr)) {
-      arr.forEach(c => acc.set(c, (acc.get(c) || 0) + 1));
+  
+  function drawBar(container, dataMap, title) {
+    const data = Array.from(dataMap, ([key, value]) => ({key, value}))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10); 
+
+    if (!data.length) {
+      container.append("p").text("No mechanics data available.");
+      return;
     }
-    return acc;
-  }, new Map());
 
-  const data = Array.from(categoriesCount, ([category, count]) => ({ category, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
+    const width = 300, height = 250, margin = {top: 20, right: 20, bottom: 40, left: 80};
+
+    const svg = container.append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    const y = d3.scaleBand()
+      .domain(data.map(d => d.key))
+      .range([margin.top, height - margin.bottom])
+      .padding(0.1);
+
+    const x = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.value)])
+      .range([margin.left, width - margin.right]);
+
+    svg.selectAll("rect")
+      .data(data)
+      .enter().append("rect")
+      .attr("x", margin.left)
+      .attr("y", d => y(d.key))
+      .attr("width", d => x(d.value) - margin.left)
+      .attr("height", y.bandwidth())
+      .attr("fill", "#2196F3");
+
+    svg.append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(5));
+
+    svg.append("g")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y));
+
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", margin.top - 5)
+      .attr("text-anchor", "middle")
+      .style("font-weight", "bold")
+      .text(title);
+  }
+
+
+  drawBar(containerGlobal, globalMechanics, "Top mechanics (All games)");
+  drawBar(containerLocal, localMechanics, "Top mechanics (Base + neighbors)");
+}
+function renderThemesComparison(baseGame, neighborsList, gamesData, limit = 5000) {
+  const containerGlobal = d3.select("#categories-global");
+  const containerLocal = d3.select("#categories-local");
+  containerGlobal.html(""); 
+  containerLocal.html("");
+
+  if (!gamesData || !Object.keys(gamesData).length) {
+    containerGlobal.append("p").text("No data available.");
+    containerLocal.append("p").text("No data available.");
+    return;
+  }
+
+  const allGames = Object.values(gamesData)
+    .filter(d => Array.isArray(d.categories) && Number.isFinite(d.avgRating))
+    .sort((a, b) => b.avgRating - a.avgRating)
+    .slice(0, limit);
+
+  const globalCategories = d3.rollup(
+    allGames.flatMap(d => d.categories),
+    v => v.length,
+    d => d
+  );
+
+  const localGames = [gamesData[baseGame], ...neighborsList.map(n => gamesData[n.name])].filter(Boolean);
+  const localCategories = d3.rollup(
+    localGames.flatMap(d => d.categories || []),
+    v => v.length,
+    d => d
+  );
+
+  function drawPie(container, dataMap, title) {
+  const data = Array.from(dataMap, ([key, value]) => ({key, value}))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
 
   if (!data.length) {
-    mount.append("p").text("No category data available for current matches.");
+    container.append("p").text("No categories data available.");
     return;
   }
 
-  const total = d3.sum(data, d => d.count);
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
-  const pie = d3.pie().value(d => d.count);
-  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const width = 380, height = 260;
+  const radius = 100;
 
-  const svgEl = mount.append("svg")
+  const svg = container.append("svg")
     .attr("width", width)
-    .attr("height", height + 80)
-    .style("display", "block")
-    .style("margin", "0 auto");
+    .attr("height", height);
 
-  const chartGroup = svgEl.append("g")
-    .attr("transform", `translate(${width/2 - 100},${height/2})`);
+  svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", 20)
+    .attr("text-anchor", "middle")
+    .style("font-size", "16px")
+    .style("font-weight", "bold")
+    .text(title);
+
+  const chartGroup = svg.append("g")
+    .attr("transform", `translate(${radius + 20}, ${radius + 40})`);
+
+  const pie = d3.pie().value(d => d.value);
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const color = d3.scaleOrdinal(d3.schemeCategory10);
+
   chartGroup.selectAll("path")
     .data(pie(data))
     .enter().append("path")
     .attr("d", arc)
-    .attr("fill", d => color(d.data.category))
-    .on("click", (event, d) => {
-      const baseCategories = baseInfo.categories || [];
-      const sharedCategories = baseCategories.filter(c => c === d.data.category);
+    .attr("fill", d => color(d.data.key));
 
-      alert(
-        `Category: ${d.data.category}\n` +
-        `Neighbor games count: ${d.data.count}\n` +
-        `Shared with base game: ${sharedCategories.join(", ") || "None"}`
-      );
-    });
-  chartGroup.selectAll("text")
-    .data(pie(data))
+  const legend = svg.append("g")
+    .attr("transform", `translate(${radius * 2 + 40}, 40)`);
+  legend.selectAll("rect")
+    .data(data)
+    .enter().append("rect")
+    .attr("x", 0)
+    .attr("y", (d, i) => i * 20)
+    .attr("width", 12)
+    .attr("height", 12)
+    .attr("fill", d => color(d.key));
+
+  legend.selectAll("text")
+    .data(data)
     .enter().append("text")
-    .attr("transform", d => `translate(${arc.centroid(d)})`)
-    .attr("dy", "0.35em")
-    .text(d => `${((d.data.count/total)*100).toFixed(1)}%`)
+    .attr("x", 18)
+    .attr("y", (d, i) => i * 20 + 10)
     .style("font-size", "12px")
-    .style("text-anchor", "middle");
-  svgEl.append("text")
-    .attr("x", width / 2)
-    .attr("y", 25)
-    .attr("text-anchor", "middle")
-    .style("font-size", "16px")
-    .text("Top 6 Categories by Frequency");
-  const legend = svgEl.append("g")
-    .attr("transform", `translate(${width - 180}, 60)`);
-
-  data.forEach((d, i) => {
-    legend.append("rect")
-      .attr("x", 0).attr("y", i * 25)
-      .attr("width", 14).attr("height", 14)
-      .attr("fill", color(d.category));
-    legend.append("text")
-      .attr("x", 20).attr("y", i * 25 + 12)
-      .text(`${d.category} (${((d.count/total)*100).toFixed(1)}%)`)
-      .attr("font-size", "13px");
-  });
+    .text(d => d.key);
 }
-function renderPublicationTrend(baseGame, neighborsList, gamesData) {
-  const mount = d3.select("#other-graph");
-  mount.html("");
-  const width = 700;
-  const height = 400;
-  const baseInfo = gamesData?.[baseGame] || {};
-  const years = neighborsList.reduce((acc, n) => {
-    const info = gamesData?.[n.name];
-    const y = info?.year || info?.yearPublished;
-    if (y) acc.push(+y);
-    return acc;
-  }, []);
 
-  if (!years.length) {
-    mount.append("p").text("No publication data available for current matches.");
+  drawPie(containerGlobal, globalCategories, "Categories (All games)");
+  drawPie(containerLocal, localCategories, "Categories (Base + neighbors)");
+}
+function renderPublicationComparison(baseGame, neighborsList, gamesData, limit = 5000) {
+  const mount = d3.select("#publications-graph");
+  mount.html("");
+
+  if (!gamesData || typeof gamesData !== "object") {
+    mount.append("p").text("No data available.");
     return;
   }
-  const yearCount = d3.rollup(years, v => v.length, d => d);
-  const data = Array.from(yearCount, ([year, count]) => ({ year, count }))
-    .sort((a, b) => a.year - b.year);
 
-  const x = d3.scaleLinear()
-    .domain(d3.extent(data, d => d.year))
-    .range([60, width - 20]);
+  const MIN_YEAR = 1950;
+  const MAX_YEAR = 2030;
+  let allGames = Object.values(gamesData)
+    .map(d => ({ name: d.name, year: d.year, rating: d.avgRating }))
+    .filter(d => Number.isFinite(d.year) && d.year >= MIN_YEAR && d.year <= MAX_YEAR);
 
-  const yMax = d3.max(data, d => d.count) || 1;
-  const y = d3.scaleLinear()
-    .domain([0, yMax])
-    .range([height - 50, 40]);
+  allGames = allGames
+    .filter(d => Number.isFinite(d.rating))
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, limit);
 
-  const svgEl = mount.append("svg")
-    .attr("width", width)
-    .attr("height", height + 60)
-    .style("display", "block")
-    .style("margin", "0 auto");
+  const globalCounts = d3.rollup(allGames, v => v.length, d => d.year);
+  const baseInfo = gamesData[baseGame];
+  const localGames = [
+    ...(baseInfo ? [baseInfo] : []),
+    ...neighborsList.map(n => gamesData[n.name]).filter(Boolean)
+  ]
+    .map(d => ({ name: d.name, year: d.year, rating: d.avgRating }))
+    .filter(d =>
+      Number.isFinite(d.year) &&
+      Number.isFinite(d.rating) &&
+      d.year >= MIN_YEAR &&
+      d.year <= MAX_YEAR
+    );
 
-  svgEl.append("g")
-    .attr("transform", `translate(0,${height - 50})`)
-    .call(d3.axisBottom(x).tickFormat(d3.format("d")));
+  function drawGlobal(container, dataMap, title) {
+    const data = Array.from(dataMap, ([year, count]) => ({ year, count }))
+      .filter(d => d.year >= MIN_YEAR && d.year <= MAX_YEAR)
+      .sort((a, b) => a.year - b.year);
 
-  svgEl.append("g")
-    .attr("transform", "translate(60,0)")
-    .call(d3.axisLeft(y).ticks(yMax).tickFormat(d3.format("d")));
+    if (!data.length) {
+      container.append("p").text("No global publication data available.");
+      return;
+    }
 
-  svgEl.selectAll("circle")
-    .data(data)
-    .enter().append("circle")
-    .attr("cx", d => x(d.year))
-    .attr("cy", d => y(d.count))
-    .attr("r", 5)
-    .attr("fill", "#FF5722")
-    .on("click", (event, d) => {
-      const baseYear = baseInfo.year || baseInfo.yearPublished;
-      const comparison = baseYear
-        ? `Base game published in ${baseYear}.`
-        : "Base game publication year unknown.";
+    const width = 360, height = 260, m = { top: 30, right: 20, bottom: 45, left: 55 };
+    const svg = container.append("svg").attr("width", width).attr("height", height);
 
-      alert(
-        `Year: ${d.year}\n` +
-        `Neighbor games published: ${d.count}\n\n` +
-        comparison
+    const x = d3.scaleBand()
+      .domain(data.map(d => d.year))
+      .range([m.left, width - m.right])
+      .padding(0.1);
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.count)])
+      .nice()
+      .range([height - m.bottom, m.top]);
+
+    svg.selectAll("rect").data(data).enter().append("rect")
+      .attr("x", d => x(d.year))
+      .attr("y", d => y(d.count))
+      .attr("width", x.bandwidth())
+      .attr("height", d => y(0) - y(d.count))
+      .attr("fill", "#2196F3");
+
+
+    svg.append("g")
+      .attr("transform", `translate(0,${height - m.bottom})`)
+      .call(
+        d3.axisBottom(x)
+          .tickValues(x.domain().filter((d, i) => i % 5 === 0))
+          .tickFormat(d3.format("d"))
       );
-    });
 
+    svg.append("g")
+      .attr("transform", `translate(${m.left},0)`)
+      .call(d3.axisLeft(y).ticks(6));
 
-  svgEl.append("text")
-    .attr("x", width / 2)
-    .attr("y", 25)
-    .attr("text-anchor", "middle")
-    .style("font-size", "16px")
-    .text("Games Published per Year");
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", m.top - 10)
+      .attr("text-anchor", "middle")
+      .style("font-weight", "bold")
+      .text(title);
+  }
 
-  svgEl.append("text")
-    .attr("x", width / 2)
-    .attr("y", height + 40)
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Year");
+  function drawLocal(container, games, title) {
+    if (!games.length) {
+      container.append("p").text("No local publication data available.");
+      return;
+    }
 
-  svgEl.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -(height - 50) / 2)
-    .attr("y", 20)
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Number of Games");
+    const width = 360, height = 260, m = { top: 30, right: 20, bottom: 45, left: 55 };
+    const svg = container.append("svg").attr("width", width).attr("height", height);
+
+    const x = d3.scaleLinear()
+      .domain([MIN_YEAR, MAX_YEAR])
+      .range([m.left, width - m.right]);
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(games, d => d.rating)])
+      .nice()
+      .range([height - m.bottom, m.top]);
+
+    svg.selectAll("circle").data(games).enter().append("circle")
+      .attr("cx", d => x(d.year))
+      .attr("cy", d => y(d.rating))
+      .attr("r", 4)
+      .attr("fill", "#FF9800")
+      .append("title")
+      .text(d => `${d.name} (${d.year}) - Rating: ${d.rating.toFixed(2)}`);
+
+    svg.append("g")
+      .attr("transform", `translate(0,${height - m.bottom})`)
+      .call(
+        d3.axisBottom(x)
+          .ticks(10)
+          .tickFormat(d3.format("d"))
+      );
+
+    svg.append("g")
+      .attr("transform", `translate(${m.left},0)`)
+      .call(d3.axisLeft(y).ticks(6));
+
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", m.top - 10)
+      .attr("text-anchor", "middle")
+      .style("font-weight", "bold")
+      .text(title);
+  }
+
+  const globalDiv = mount.append("div").attr("class", "pub-global");
+  const localDiv = mount.append("div").attr("class", "pub-local");
+  drawGlobal(globalDiv, globalCounts, "Publications (All games)");
+  drawLocal(localDiv, localGames, "Publications (Base + neighbors)");
 }
 
+
 window.renderGraph = renderGraph
-window.renderRatingDensity = renderRatingDensity
-window.renderMechanicsBarChart = renderMechanicsBarChart
-window.renderCategoriesPieChart = renderCategoriesPieChart
-window.renderPublicationTrend = renderPublicationTrend
+window.renderDensityComparison = renderDensityComparison
+window.renderThemesComparison = renderThemesComparison
+window.renderMechanicsComparison = renderMechanicsComparison
+window.renderPublicationComparison = renderPublicationComparison

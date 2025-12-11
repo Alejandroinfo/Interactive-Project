@@ -1,0 +1,290 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+h1 { text-align: center; margin-bottom: 20px; }
+h4 { margin-top: 15px; margin-bottom: 5px; color: #333; }
+
+label { display: block; margin-top: 10px; font-weight: bold; }
+input, select { margin-top: 5px; padding: 5px; font-size: 14px; }
+
+.tab {
+  margin-bottom: 20px;
+  text-align: center;
+}
+.tab button {
+  background-color: #f0f8ff;
+  border: none;
+  padding: 10px 16px;
+  margin: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: background-color 0.3s, color 0.3s;
+}
+.tab button:hover { background-color: #e6f0ff; }
+.tab button.active {
+  background-color: #2196F3;
+  color: #fff;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.tabcontent { display: none; }
+.tabcontent.active { display: block; }
+
+.chart-selector {
+  margin-bottom: 20px;
+  text-align: center;
+}
+.chart-selector button {
+  background-color: #f5fff5;
+  border: none;
+  padding: 8px 14px;
+  margin: 0 6px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
+}
+.chart-selector button:hover {
+  background-color: #e8ffe8;
+  transform: scale(1.05);
+}
+.chart-selector button.active {
+  background-color: #4CAF50;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+#results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.result-card:hover { transform: scale(1.02); background-color: #f0f0f0; }
+.result-card.expanded {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.game-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-right: 12px;
+}
+.game-info { flex: 1; font-size: 14px; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.close-btn-top {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 14px;
+  cursor: pointer;
+}
+.close-btn-top:hover { color: #333; }
+
+.match-reasons-panel {
+  flex: 1;
+  background: #fafafa;
+  border-left: 2px solid #ddd;
+  padding: 10px;
+  display: none;
+}
+.result-card.expanded .match-reasons-panel { display: block; }
+
+#base-game-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+#selected-game-info-results,
+#base-game-graph {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+#selected-game-info-results { flex: 1 1 300px; }
+#base-game-graph { flex: 2 1 500px; }
+#graph-container svg { width: 100%; height: auto; }
+
+@media (max-width: 768px) {
+  #base-game-view { flex-direction: column; }
+  #selected-game-info-results, #base-game-graph { flex: 1 1 100%; }
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.game-card img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.tabcontent svg {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+}
+.chart-title {
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.legend { font-size: 12px; fill: #333; }
+.legend rect { stroke: #ccc; stroke-width: 1; }
+.axis text { font-size: 12px; }
+.axis.x text {
+  text-anchor: end;
+  transform: rotate(-40deg);
+}
+
+.graph-tooltip,
+.card-tooltip {
+  position: absolute;
+  pointer-events: none;
+  padding: 6px 10px;
+  background: rgba(30,30,30,0.9);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  display: none;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.tooltip-content div { margin: 2px 0; }
+
+
+.results-controls { margin-top: 12px; display: flex; gap: 8px; }
+.results-controls button,
+.set-base-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.95em;
+  cursor: pointer;
+}
+.results-controls button:hover,
+.set-base-btn:hover { background-color: #45a049; }
+
+#comparisonTab {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#comparisonTab h2 {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #333;
+  text-align: center;
+}
+
+.comparison-table {
+  border-collapse: collapse;
+  width: 80%;
+  max-width: 800px;
+  margin: 20px auto;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: center;
+  background-color: #fafafa;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.comparison-table th,
+.comparison-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+.comparison-table th {
+  background-color: #2196F3;
+  color: white;
+  font-weight: bold;
+}
+.comparison-table tr:nth-child(even) { background-color: #f2f2f2; }
+
+#comparison-graph h4 {
+  margin-top: 20px;
+  font-size: 1.2em;
+  color: #444;
+}
+#comparison-graph p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #555;
+}
+#density-global,
+#density-local {
+  position: relative;     
+  margin-bottom: 25px;    }
+
+#density-global div,
+#density-local div {
+  pointer-events: none;   
+}
+
+.tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.density-tooltip {
+  position: absolute;
+  pointer-events: none;
+  padding: 6px 10px;
+  background: rgba(30, 30, 30, 0.85);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+  z-index: 9999;
+  max-width: 180px;
+}

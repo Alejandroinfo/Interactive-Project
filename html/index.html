@@ -1,26 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" href="favicon.ico">
+  <link rel="icon" href="favicon.ico">
   <meta charset="UTF-8">
   <title>Boardgame Similarity Explorer</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="general.css">
+    <link rel="stylesheet" href="graph.css">
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="d3.layout.cloud.js"></script>
   <script src="js/filters.js"></script>
   <script src="js/render.js"></script>
   <script src="js/graph.js"></script>
   <script src="js/controller.js"></script>
+  <script src="js/about.js"></script>
   <script src="js/main.js"></script>
 </head>
 <body>
   <h1>Boardgame Similarity Explorer</h1>
 
-  <div class="tabs">
-    <button class="tablink" type="button" data-tab="resultsTab">Results</button>
-    <button class="tablink" type="button" data-tab="graphTab">Graph</button>
-    <button class="tablink" type="button" data-tab="extraTab">Other Charts</button>
-  </div>
+  <!-- Tabs -->
+<div class="tab">
+  <button class="tablinks" onclick="openTab('resultsTab')">Results</button>
+  <button class="tablinks" onclick="openTab('extraTab')">Other Charts</button>
+  <button class="tablinks" onclick="openTab('aboutTab')">About</button>
+    <button class="tablinks" onclick="openTab('comparisonTab')">Comparison</button>
+</div>
 
+  <!-- Results Tab -->
   <div id="resultsTab" class="tabcontent">
     <label for="gameInput">Type a game:</label>
     <input list="games" id="gameInput" placeholder="e.g. Catan">
@@ -30,96 +36,158 @@
     <button id="helpFindBtn" type="button">🤔 Help me find a game</button>
     <div id="helpFindPanel" style="display:none;"></div>
 
+    <!-- Filters -->
     <div id="filter-menu">
-    <button id="toggleFilters" type="button">⚙️ Filters</button>
-    <div id="activeFilters"></div>
+      <button id="toggleFilters" type="button">⚙️ Filters</button>
+      <div id="activeFilters"></div>
 
-    <div id="filters-panel" style="display:none;">
+      <div id="filters-panel" style="display:none;">
         <button id="resetFiltersBtn" type="button">🔄 Reset Filters</button>
-
         <div class="filter-section">
-        <label for="ratingSlider">Minimum rating:</label>
-        <input type="range" id="ratingSlider" min="0" max="10" step="0.1" value="6">
-        <span id="ratingValue">6</span>
+        <label>
+            <input type="checkbox" id="excludeExpansions">
+            Exclude too similar games(expansions, reimplements...)
+        </label>
         </div>
 
         <div class="filter-section">
-        <label for="playersSlider">Players:</label>
-        <input type="range" id="playersSlider" min="1" max="10" step="1" value="4">
-        <span id="playersValue">4</span>
+          <label for="ratingSlider">Minimum rating:</label>
+          <input type="range" id="ratingSlider" min="0" max="10" step="0.1" value="6">
+          <span id="ratingValue">6</span>
         </div>
 
         <div class="filter-section">
-        <label for="playtimeSlider">Playtime (minutes):</label>
-        <input type="range" id="playtimeSlider" min="10" max="300" step="10" value="90">
-        <span id="playtimeValue">90</span>
+          <label for="playersSlider">Players:</label>
+          <input type="range" id="playersSlider" min="1" max="10" step="1" value="4">
+          <span id="playersValue">4</span>
         </div>
 
         <div class="filter-section">
-        <label for="limitSlider">Max results:</label>
-        <input type="range" id="limitSlider" min="1" max="200" value="10">
-        <span id="limitSliderValue">10</span>
+          <label for="playtimeSlider">Playtime (minutes):</label>
+          <input type="range" id="playtimeSlider" min="10" max="300" step="10" value="90">
+          <span id="playtimeValue">90</span>
         </div>
 
         <div class="filter-section">
-        <label for="artistInput">Artist:</label>
-        <input id="artistInput" list="artists">
-        <datalist id="artists"></datalist>
+          <label for="limitSlider">Max results:</label>
+          <input type="range" id="limitSlider" min="1" max="200" value="10">
+          <span id="limitSliderValue">10</span>
         </div>
 
         <div class="filter-section">
-        <label for="publisherInput">Publisher:</label>
-        <input id="publisherInput" list="publishers">
-        <datalist id="publishers"></datalist>
+          <label for="artistInput">Artist:</label>
+          <input id="artistInput" list="artists">
+          <datalist id="artists"></datalist>
         </div>
 
         <div class="filter-section">
-        <label for="designerInput">Designer:</label>
-        <input id="designerInput" list="designers">
-        <datalist id="designers"></datalist>
+          <label for="publisherInput">Publisher:</label>
+          <input id="publisherInput" list="publishers">
+          <datalist id="publishers"></datalist>
         </div>
 
         <div class="filter-section">
-        <label for="themeInput">Theme:</label>
-        <input id="themeInput" list="themes">
-        <datalist id="themes"></datalist>
+          <label for="designerInput">Designer:</label>
+          <input id="designerInput" list="designers">
+          <datalist id="designers"></datalist>
         </div>
 
         <div class="filter-section">
-        <label for="mechanicInput1">Mechanic 1:</label>
-        <input id="mechanicInput1" list="mechanics">
-        <datalist id="mechanics"></datalist>
+          <label for="themeInput">Theme:</label>
+          <input id="themeInput" list="themes">
+          <datalist id="themes"></datalist>
         </div>
 
         <div class="filter-section">
-        <label for="mechanicInput2">Mechanic 2:</label>
-        <input id="mechanicInput2" list="mechanics">
+          <label for="mechanicInput1">Mechanic 1:</label>
+          <input id="mechanicInput1" list="mechanics">
+          <datalist id="mechanics"></datalist>
         </div>
 
         <div class="filter-section">
-        <label for="mechanicInput3">Mechanic 3:</label>
-        <input id="mechanicInput3" list="mechanics">
+          <label for="mechanicInput2">Mechanic 2:</label>
+          <input id="mechanicInput2" list="mechanics">
         </div>
+
+        <div class="filter-section">
+          <label for="mechanicInput3">Mechanic 3:</label>
+          <input id="mechanicInput3" list="mechanics">
+        </div>
+      </div> 
     </div>
+
+    <!-- Base game card + graph -->
+    <div id="base-game-view">
+      <div id="selected-game-info-results"></div>
+      <div id="base-game-graph">
+        <h3 class="chart-title">Similarity Graph</h3>
+        <div id="graph-container"></div>
+      </div>
     </div>
 
-    <div id="selected-game-info-results"></div>
+    <!-- Neighbor results -->
     <div id="results"></div>
   </div>
-
-  <div id="graphTab" class="tabcontent">
-    <div id="selected-game-info"></div>
-    <div id="graph"></div>
+  <!-- Other Charts Tab -->
+<div id="extraTab" class="tabcontent">
+  <div class="chart-selector">
+    <button id="ratingsBtn" type="button">Ratings</button>
+    <button id="mechanicsBtn" type="button">Mechanics</button>
+    <button id="categoriesBtn" type="button">Categories</button>
+    <button id="publicationsBtn" type="button">Publications</button>
+    <button id="wordcloudBtn" type="button">Word Cloud</button>
   </div>
 
-  <div id="extraTab" class="tabcontent">
-    <div class="chart-selector">
-      <button id="ratingsBtn" type="button">Ratings</button>
-      <button id="mechanicsBtn" type="button">Mechanics</button>
-      <button id="categoriesBtn" type="button">Categories</button>
-      <button id="publicationsBtn" type="button">Publications</button>
-    </div>
-    <div id="other-graph"></div>
+  <!-- Slider global -->
+  <div class="filter-section">
+    <label for="globalLimitSlider">Number of global games:</label>
+    <input type="range" id="globalLimitSlider" min="1000" max="10000" step="1000" value="5000">
+    <span id="globalLimitValue">5000</span>
   </div>
+
+  <!--Ratings -->
+<div id="density-graph" class="graph-pair">
+  <div id="density-global" class="graph-box"></div>
+  <div id="density-local" class="graph-box"></div>
+</div>
+  <!--Mechanics -->
+<div id="mechanics-graph" class="graph-pair">
+  <div id="mechanics-global" class="graph-box"></div>
+  <div id="mechanics-local" class="graph-box"></div>
+</div>
+<div id="categories-graph" class="graph-pair">
+  <div id="categories-global" class="graph-box"></div>
+  <div id="categories-local" class="graph-box"></div>
+</div>
+  <!--Publications -->
+<div id="publications-graph" class="graph-pair">
+  <div id="publications-global" class="graph-box"></div>
+  <div id="publications-local" class="graph-box"></div>
+</div>
+
+<div id="wordcloud-graph" class="graph-single">
+  <div id="wordcloud-container" class="graph-box"></div>
+</div>
+</div>
+
+  <!-- About Tab -->
+<div id="aboutTab" class="tabcontent">
+  <h2>About This Page</h2>
+  <div id="about-diagram"></div>
+  <p>The similarity score is built by combining:</p>
+<ul>
+  <li><b>Mechanics:</b> Rules and systems of play (e.g., deck-building, worker placement).</li>
+  <li><b>Themes:</b> Narrative or setting (e.g., fantasy, sci-fi, economy).</li>
+  <li><b>Other variables:</b> Rating, Description, Categories.</li>
+</ul>
+<p>Games with more overlap in these areas receive a higher similarity score, which is used to draw links in the graph and rank neighbor games.</p>
+
+  <div id="about-content"></div>
+</div>
+<div id="comparisonTab" class="tabcontent">
+  <h2>Game Comparison</h2>
+  <div id="comparison-graph"></div>
+</div>
+
 </body>
 </html>

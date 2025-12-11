@@ -1,0 +1,243 @@
+#results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.result-card:hover {
+  transform: scale(1.02);
+  background-color: #f0f0f0;
+}
+.result-card.expanded {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.game-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-right: 12px;
+}
+
+.game-info {
+  flex: 1;
+  font-size: 14px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-btn-top {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 14px;
+  cursor: pointer;
+}
+.close-btn-top:hover { color: #333; }
+
+.match-reasons-panel {
+  flex: 1;
+  background: #fafafa;
+  border-left: 2px solid #ddd;
+  padding: 10px;
+  display: none;
+}
+.result-card.expanded .match-reasons-panel {
+  display: block;
+}
+
+#base-game-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+#selected-game-info-results {
+  flex: 1 1 300px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+#base-game-graph {
+  flex: 2 1 500px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+#graph-container svg {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  #base-game-view {
+    flex-direction: column;
+  }
+  #selected-game-info-results,
+  #base-game-graph {
+    flex: 1 1 100%;
+  }
+}
+
+.graph-tooltip {
+  position: absolute;
+  pointer-events: none;
+  padding: 6px 10px;
+  background: rgba(30,30,30,0.9);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  display: none;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.comparison-table {
+  border-collapse: collapse;
+  margin-top: 15px;
+  width: 100%;
+  max-width: 700px;
+  font-size: 14px;
+}
+.comparison-table th,
+.comparison-table td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: center;
+}
+.comparison-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+.comparison-table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+#other-graph svg {
+  display: block;
+  margin: 0 auto;
+}
+#other-graph text {
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+}
+
+#comparisonTab {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#comparisonTab h2 {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #333;
+  text-align: center;
+}
+
+.comparison-table {
+  border-collapse: collapse;
+  width: 80%;
+  max-width: 800px;
+  margin: 20px auto;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: center;
+  background-color: #fafafa;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.comparison-table th,
+.comparison-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.comparison-table th {
+  background-color: #2196F3;
+  color: white;
+  font-weight: bold;
+}
+
+.comparison-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+#comparison-graph h4 {
+  margin-top: 20px;
+  font-size: 1.2em;
+  color: #444;
+}
+
+#comparison-graph p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #555;
+}
+.tabcontent svg {
+  width: 100%;
+  height: auto;
+  max-height: 500px; 
+}
+
+.chart-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.graph-pair {
+  width: 100%;
+  max-width: 1100px;
+  margin: 20px auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+}
+
+.graph-box {
+  flex: 1 1 480px;    
+  max-width: 600px;   
+}
+.graph-single {
+  width: 100%;
+  max-width: 1100px;
+  margin: 20px auto;
+  display: flex;
+  justify-content: center;
+}
+
+.graph-single .graph-box {
+  flex: 1 1 700px;   
+  max-width: 900px;  
+}
+
+
